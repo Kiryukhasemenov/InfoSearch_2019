@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-#libs
 from pymorphy2 import MorphAnalyzer
 from nltk.tokenize import WordPunctTokenizer
 import re
@@ -12,6 +11,7 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 morph = MorphAnalyzer()
 
+#ЧАСТЬ 1
 #функция препроцессинга
 def preproc(file, isFile=True):
     if isFile:
@@ -67,8 +67,11 @@ def search(data, vec):
 
 search(df_fr, vec)
 
+#ЧАСТЬ 2
 #вспомогательная функция
-def statistics_preproc(data, binary=False, noStopWords=False):
+def statistics_preproc(data, binary=False, noStopWords=False): 
+    # параметр binary - приводит обратный индекс к бинарному виду (для каждого слова указывается только, встречается оно или нет),
+    # параметр noStopWords - исключает из подсчета стоп-слова (на основе nltk.stopwords)
     df_transpose = data.transpose()
     if binary == True:
         df_transpose = df_transpose.applymap(lambda x: 1 if x > 0 else 0)
