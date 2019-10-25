@@ -147,8 +147,7 @@ def fasttext_indexing(d):
     data.to_csv('fasttext_index.csv', index=False) 
     return data
 
-def elmo_indexing(d):
-    pass
+
 
 
 def main():
@@ -166,8 +165,8 @@ def main():
         fasttext_index = fasttext_indexing(preproc_df)
         logging.info('made fasttext dataframe')
         del(fasttext_index)
-        elmo_index = elmo_indexing(preproc_df)
-        logging.info('made ELMo dataframe')
+        #elmo_index = elmo_indexing(preproc_df)
+        #logging.info('made ELMo dataframe')
 
     except Exception as e:
         logging.exception(repr(e) + ' while some function')
