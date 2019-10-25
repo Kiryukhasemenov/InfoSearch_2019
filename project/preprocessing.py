@@ -147,8 +147,89 @@ def fasttext_indexing(d):
     data.to_csv('fasttext_index.csv', index=False) 
     return data
 
+import time
+import numpy as np
+import tensorflow as tf
+#from elmo_helpers import tokenize, get_elmo_vectors, load_elmo_embeddings
+
+tf.reset_default_graph()
+elmo_path = 'ELMO'
+
+import sys
+# the mock-0.3.1 dir contains testcase.py, testutils.py & mock.py
+sys.path.append('simple_elmo')
+
+from elmo_helpers import tokenize, get_elmo_vectors, load_elmo_embeddings
+
+def get_data_elmo(corpus, stop=5000):
+    """
+    Проходит по корпусу и токенизирует тексты.
+
+    :param corpus: path to csv file with corpus
+    :param stop: int, how many lines we want to get
+    :return: 
+        indexed -> list of list of strings
+        id_to_text -> dict, map of text_id to raw text. 
+        query_to_dupl -> dict, query:id of its duplicate
+
+    """
+    indexed = []
+    id_to_text = {}
+    query_to_id = {}
+    counter = 0
+
+    for idx, doc in enumerate(corpus):
+        #sent = preproc(doc)
+        doc = str(doc)
+        indexed.append(tokenize(doc))
+        id_to_text[idx] = doc
+        counter += 1
+        query_to_id[doc] = idx
+
+        if counter >= stop:
+            break       
+
+    return indexed, id_to_text, query_to_id
 
 
+def crop_vec(vect, sent):
+    """
+    Crops dummy values
+
+    :param vect: np.array, vector from ELMo
+    :param sent: list of str, tokenized sentence
+    :return: np.array
+
+    """
+    cropped_vector = vect[:len(sent), :]
+    cropped_vector = np.mean(cropped_vector, axis=0)
+    return cropped_vector
+
+def elmo_indexing(cleaned, batcher, sentence_character_ids, elmo_sentence_input): #preprocessing
+    """ 
+    Indexing corpus
+    :param cleaned: list if lists of str, tokenized documents from the corpus
+    :param batcher, sentence_character_ids, elmo_sentence_input: ELMo model
+
+    :return: matrix of document vectors
+    """
+    with tf.Session() as sess:
+        # It is necessary to initialize variables once before running inference.
+        sess.run(tf.global_variables_initializer())
+        indexed = []
+        for i in range(200, len(cleaned)+1, 200):
+            sentences = cleaned[i-200 : i]
+            elmo_vectors = get_elmo_vectors(
+                sess, sentences, batcher, sentence_character_ids, elmo_sentence_input)
+
+            for vect, sent in zip(elmo_vectors, sentences):
+                cropped_vector = crop_vec(vect, sent)
+                indexed.append(cropped_vector)
+    data_elmo = pd.DataFrame(indexed)
+    data_elmo.to_csv('elmo_index.csv', index=False)
+    #with open('ELMO_model.pickle', 'wb') as f:
+    #    pickle.dump((batcher, sentence_character_ids, elmo_sentence_input), f)
+    return indexed
 
 def main():
     try:
@@ -166,7 +247,10 @@ def main():
         logging.info('made fasttext dataframe')
         del(fasttext_index)
         #elmo_index = elmo_indexing(preproc_df)
-        #logging.info('made ELMo dataframe')
+        batcher, sentence_character_ids, elmo_sentence_input = load_elmo_embeddings(elmo_path)
+        cleaned, id_to_text, query_to_id = get_data_elmo(preproc_df.question1.tolist(), stop=5000)
+        elmo_index = elmo_indexing(cleaned, batcher, sentence_character_ids, elmo_sentence_input)
+        logging.info('made ELMo dataframe')
 
     except Exception as e:
         logging.exception(repr(e) + ' while some function')
