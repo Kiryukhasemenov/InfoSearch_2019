@@ -1,0 +1,1 @@
+Link to FastText: http://vectors.nlpl.eu/repository/11/181.zip

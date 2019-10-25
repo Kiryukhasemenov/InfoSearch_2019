@@ -1,0 +1,124 @@
+<input type="radio" name="method" value="TF-IDF">TF-IDF</label><br><br>
+	<input type="radio" name="method" value="BM25">BM25</label><br><br>
+	<input type="radio" name="method" value="FastText">FastText (комп. не тянет)</label><br><br>
+	<input type="submit" value="Search">
+
+
+def get_ultimate_sentences_(res):
+    ultimate_df = pd.read_csv("quora_question_pairs_rus.csv", index_col='Unnamed: 0')
+    #res["document"] = pd.Series()
+    #res['document'] = res.apply(lambda row: ultimate_df.iloc[row.index, 'question1'])
+    triple_dict = {}
+    counter = 1
+    for idx, row in res.iterrows():
+        #print(row)
+        triple_dict[counter] = [row['val'], ultimate_df.loc[idx, 'question1']]
+        counter += 1
+        #res.iloc[idx, 'document'] = ultimate_df.iloc[idx, 'question1']
+    return triple_dict    
+    #return None
+	
+def td_metric_(query, data):
+    results = {}
+    print(data.columns)
+    for index, row in data.iterrows():
+        vector = row.as_matrix()
+        cos_sim = cosine_similarity(vector.reshape(1, -1), query)
+        cos_sim = np.asscalar(cos_sim)
+        results[cos_sim] = index
+    sorted_results = sorted(results.items(), reverse=True)[:10]
+    sorted_results = {v:k for k, v in sorted_results}
+    return sorted_results
+	
+import os
+os.mkdir('bilm')
+
+#%load_ext autoreload
+
+import time
+import numpy as np
+#from elmo_helpers import tokenize, get_elmo_vectors, load_elmo_embeddings
+
+tf.reset_default_graph()
+elmo_path = 'ELMO'
+
+# the mock-0.3.1 dir contains testcase.py, testutils.py & mock.py
+sys.path.append('simple_elmo')
+
+from elmo_helpers import tokenize, get_elmo_vectors, load_elmo_embeddings
+
+batcher, sentence_character_ids, elmo_sentence_input = load_elmo_embeddings(elmo_path)
+
+import csv
+
+def get_data_elmo(corpus, stop=5000):
+    """
+    Проходит по корпусу и токенизирует тексты.
+
+    :param corpus: path to csv file with corpus
+    :param stop: int, how many lines we want to get
+    :return: 
+        indexed -> list of list of strings
+        id_to_text -> dict, map of text_id to raw text. 
+        query_to_dupl -> dict, query:id of its duplicate
+
+    """
+    indexed = []
+    id_to_text = {}
+    #query_to_dupl_id = {}
+    counter = 0
+    #перезаписать, получая на вход список строк
+    for idx, doc in enumerate(corpus):
+        sent = preproc(doc)
+        indexed.append(tokenize(sent))
+        id_to_text[idx] = sent
+        counter += 1
+        if counter >= stop:
+            break       
+
+    return indexed, id_to_text#, query_to_dupl_id
+
+sentences = data.question1.tolist()
+cleaned, id_to_text = get_data_elmo(sentences, stop=5000)
+
+def crop_vec(vect, sent):
+    """
+    Crops dummy values
+
+    :param vect: np.array, vector from ELMo
+    :param sent: list of str, tokenized sentence
+    :return: np.array
+
+    """
+    cropped_vector = vect[:len(sent), :]
+    cropped_vector = np.mean(cropped_vector, axis=0)
+    return cropped_vector
+
+def indexing(cleaned, batcher, sentence_character_ids, elmo_sentence_input): #preprocessing
+    """ 
+    Indexing corpus
+    :param cleaned: list if lists of str, tokenized documents from the corpus
+    :param batcher, sentence_character_ids, elmo_sentence_input: ELMo model
+
+    :return: matrix of document vectors
+    """
+    with tf.Session() as sess:
+        # It is necessary to initialize variables once before running inference.
+        sess.run(tf.global_variables_initializer())
+        indexed = []
+        for i in range(200, len(cleaned)+1, 200):
+            sentences = cleaned[i-200 : i]
+            elmo_vectors = get_elmo_vectors(
+                sess, sentences, batcher, sentence_character_ids, elmo_sentence_input)
+
+            for vect, sent in zip(elmo_vectors, sentences):
+                cropped_vector = crop_vec(vect, sent)
+                indexed.append(cropped_vector)
+    return indexed
+
+indexed = indexing(cleaned, batcher, sentence_character_ids, elmo_sentence_input)
+
+with open('Indexed_ELMO.pickle', 'wb') as f: #preprocessing
+    pickle.dump((indexed, id_to_text, query_to_dupl_id), f)
+    
+width="200" height="80"

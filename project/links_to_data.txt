@@ -1,0 +1,16 @@
+To run the project, you need to download some files. 
+
+Approach #1: download from Internet:
+quora_question_pairs_rus: https://www.dropbox.com/s/jaa5y82qzul6byn/quora_question_pairs_rus.csv
+preprocessed_data: https://www.dropbox.com/s/ihukturzjslnums/preprocessed_data.csv
+tf_idf_index: https://www.dropbox.com/s/yt8cof8fd0rl086/tf_idf_index.csv
+tf_idf_vectorizer.pkl: https://www.dropbox.com/s/50xnp0w1uq6cqsl/tf_idf_vectorizer.pkl
+bm25_index: https://www.dropbox.com/s/xzkdji7b7ap6zm8/bm25_index.csv
+fasttext_index: https://www.dropbox.com/s/0cjrh3wbbqcovwc/fasttext_index.csv
+elmo_index: https://www.dropbox.com/s/fzlzdu7eat4l3is/elmo_index.csv
+indexed_ELMO.pickle: https://www.dropbox.com/s/jpvhncn1bgkpi8f/Indexed_ELMO.pickle
+
+Approach #2: unzip 'data.zip' in folder.
+
+REMEMBER: you should also download the content for the 'fasttext', 'ELMO' and 'simple_elmo' folders. 
+The instructions are inside folders.

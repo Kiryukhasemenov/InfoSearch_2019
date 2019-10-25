@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Стартовая</title>
+</head>
+<body>
+<h1>Поищем за вас!!!</h1>
+<ul>
+    {% for name, url in urls.items() %}
+    <li><a href="{{ url }}">{{ name }} ВАМ СЮДА</a></li>
+    {% endfor %}
+</ul>
+</body>
+</html>
